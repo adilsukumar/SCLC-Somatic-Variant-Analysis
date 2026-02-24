@@ -109,4 +109,4 @@ If using this pipeline or analysis, please cite:
 
 ## 8. License
 
-This project is conducted under the **Sequensolutions** bioinformatics framework.
+This project is licensed under the MIT License and conducted under the **Sequensolutions**.
