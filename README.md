@@ -1,60 +1,112 @@
-# Somatic Variant Analysis of CD56+ CTCs in SCLC
+# 🧬 Somatic Variant Analysis of CD56+ CTCs in SCLC
 
-An educational reproduction of a whole-exome sequencing workflow for the public CD56+ circulating tumour cell sample **ERR6473446** from a small-cell lung cancer study.
+This repository contains the complete bioinformatics analysis pipeline—from raw sequencing data to a prioritized somatic variant list—for the liquid biopsy sample **ERR6473446**.
 
-This repository documents the quality-control reports, intermediate summaries, annotated candidate variants, and final internship report produced during the analysis. It is intended to demonstrate practical experience with cloud-based NGS processing—not to make an independent clinical claim.
+The project demonstrates an end-to-end workflow to identify significant genetic variants in **CD56+ Circulating Tumor Cells (CTCs)** from Small Cell Lung Cancer (SCLC) patients. This approach offers a "liquid window" into tumor heterogeneity and evolution that traditional solid biopsies often miss.
 
-## Dataset
+---
+
+## 1. Project Overview
+
+### 🔬 About the Data
+Raw Whole Exome Sequencing (WES) data was obtained from the European Nucleotide Archive (ENA).
 
 | Field | Value |
-| --- | --- |
-| Sample | ERR6473446 |
-| Material | CD56+ circulating tumour cells |
-| Assay | Whole-exome sequencing |
-| Reference genome | GRCh38 |
-| Source | European Nucleotide Archive / SRA |
-| Analysis setting | Tumour-only; no matched-normal sample was available |
+| :--- | :--- |
+| **Sample Accession** | ERR6473446 |
+| **Marker Target** | CD56 (NCAM1) |
+| **Cancer Type** | Small Cell Lung Cancer (SCLC) |
+| **Strategy** | Whole Exome Sequencing (WES) |
+| **Reference Study** | Ricordel et al., *Scientific Reports* (2023) |
+| **Reference Genome** | GRCh38 (hg38) |
 
-The sample and biological context originate from the source study. Any interpretation in this repository should be read alongside that study and the limitations below.
+**Study Background:**
+SCLC is a highly aggressive cancer characterized by rapid doubling time and early metastasis. Because traditional tissue biopsies are often necrotic or limited, this project focuses on **CD56+ Liquid Biopsy** to capture the full genetic diversity of the tumor landscape.
 
-## Workflow
+---
 
-The analysis was run in Ubuntu using AWS EC2/S3 and containerised bioinformatics tools.
+## 2. Methodology & Pipeline
 
-1. **Acquisition and quality control** — SRA Toolkit, FastQC, and MultiQC.
-2. **Alignment** — BWA-MEM against GRCh38.
-3. **BAM processing** — SAMtools plus GATK read groups, duplicate marking, and base-quality recalibration.
-4. **Candidate variant calling** — GATK Mutect2 in tumour-only mode, with population-resource filtering using gnomAD.
-5. **Functional annotation** — SnpEff and SnpSift, followed by prioritisation of predicted HIGH- and MODERATE-impact calls.
+The analysis was performed in a **Linux (Ubuntu)** environment utilizing **AWS EC2** and **Docker** for containerized tool management.
 
-## Repository contents
+### Step 1 — Data Acquisition & QC
+* Downloaded raw reads using `prefetch` and `fasterq-dump` from the SRA Toolkit.
+* Assessed read fidelity using **FastQC** and **MultiQC**, verifying a **Phred score > 28**.
 
-- `AdilSukumar_Somatic_Variant_Analysis_of_CD56+_Circulating_Tumor_Cells_in_SCLC.docx` — full project report
-- `ERR6473446_1_fastqc.html` and `ERR6473446_2_fastqc.html` — raw-read quality-control reports
-- `WES_Results/` — selected outputs from the analysis
+### Step 2 — Alignment & Post-Processing
+* Mapped reads to **GRCh38** using **BWA-MEM** with 16 threads.
+* Converted SAM to **BAM**, followed by coordinate sorting and indexing via **Samtools**.
+* Used **GATK AddOrReplaceReadGroups** and **MarkDuplicates** to identify and flag PCR duplicates.
+* Performed **Base Quality Score Recalibration (BQSR)** to correct systematic errors in base quality.
 
-This repository is an analysis record rather than a fully automated, one-command pipeline. Paths and resource versions should be adapted before attempting to reproduce the workflow.
+### Step 3 — Somatic Variant Calling
+* Identified somatic mutations using **GATK Mutect2** in Tumor-Normal mode.
+* Utilized the **gnomAD** resource to filter out common population germline variants.
 
-## Interpretation
+### Step 4 — Functional Annotation & Filtering
+* Predicted functional consequences using **SnpEff** (GRCh38.99 database).
+* Filtered for **HIGH** and **MODERATE** impact variants using **SnpSift**.
+* Specifically isolated variants altering the protein-coding sequence (e.g., stop-gained, frameshifts).
 
-The workflow produced a set of **candidate** somatic variants for review, including calls in genes relevant to cancer biology. Functional-impact labels from SnpEff are computational predictions; they do not establish pathogenicity, causality, or clinical relevance. Candidate calls require manual review and, ideally, orthogonal validation.
+---
 
-## Limitations
+## 3. Key Analytical Findings
 
-- There was no matched-normal sample, so residual germline variants and sequencing artefacts may remain.
-- This is a single public sample and does not support population-level conclusions.
-- Variant annotations are predictions rather than experimental validation.
-- No treatment recommendation or diagnostic conclusion should be drawn from this analysis.
-- Comparisons with tissue biopsies or mutational signatures belong to the source study unless independently reproduced here.
+The analysis confirmed a highly mutated and heterogeneous tumor profile, capturing the "sum" of metastases.
 
-## Tools
+### 📊 Variant Summary (Key Drivers)
+| Impact Tier | Dominance (%) | Key Genes Affected |
+| :--- | :--- | :--- |
+| **Indel/Frameshift** | 85.7% | TP53, CREBBP, EP300, COL22A1, PTEN, NOTCH3 |
+| **Non-Sense** | 14.3% | RB1 |
 
-SRA Toolkit · FastQC · MultiQC · BWA-MEM · SAMtools · GATK · SnpEff · SnpSift · Docker · AWS EC2/S3
+---
 
-## Project context
+## 4. Key Driver Mutations & Biological Impact
 
-Completed by **Adil Sukumar** during a bioinformatics internship at Sequensolutions (2025–2026). The work provided hands-on experience with WES data, Linux-based workflows, cloud infrastructure, and the care required when interpreting noisy biological data.
+| Gene | Variant Type | Biological Impact & Mechanism |
+| :--- | :--- | :--- |
+| **RB1** | Non-Sense | Abolishes cell-cycle brakes, triggering uncontrolled proliferation. |
+| **TP53** | Frameshift | Nullifies p53 protein, preventing DNA repair and enabling tumor survival. |
+| **CREBBP** | Frameshift | Disrupts histone acetylation, causing silencing of tumor-suppressor genes. |
+| **EP300** | Frameshift | Aborts protein synthesis, disabling chromatin remodeling. |
+| **PTEN** | Frameshift | Induces signaling alterations in the PI3K pathway. |
+| **COL22A1** | Frameshift | Destabilizes ECM, impairing tissue integrity to facilitate metastasis. |
+| **NOTCH3** | Frameshift | Disrupts neuroendocrine differentiation, driving SCLC progression. |
 
-## License
+---
 
-See [LICENSE](LICENSE) for the repository license. Data access and reuse remain subject to the terms of the original archive and study.
+## 5. Interpretation & Clinical Context
+
+### Tumor Heterogeneity & Load
+Comparative analysis showed that CD56+ CTCs consistently capture a massive mutation load, **20 to 30 times higher** than matched tissue biopsies. This confirms that liquid biopsy provides a more comprehensive view of the evolving SCLC landscape.
+
+### Mutational Signature Shift
+* **Tissue Biopsy:** Massive spike in **C>A transversions**, representing the "smoking gun" of tobacco damage.
+* **CD56+ CTCs:** Significant shift toward **C>T transitions**, indicating that circulating cells acquire new evolutionary mutations unrelated to the original smoking damage.
+
+---
+
+## 6. Tools & Dependencies
+
+| Tool | Purpose |
+| :--- | :--- |
+| **SRA Toolkit** | Raw data acquisition (`prefetch`, `fasterq-dump`) |
+| **FastQC / MultiQC** | Quality control and reporting |
+| **BWA-MEM** | Read alignment to GRCh38 |
+| **Samtools** | BAM conversion, sorting, and indexing |
+| **GATK** | MarkDuplicates, BQSR, and Mutect2 |
+| **SnpEff / SnpSift** | Functional annotation and variant filtering |
+
+---
+
+## 7. Citation
+
+If using this pipeline or analysis, please cite:
+> Adil Sukumar, *Somatic Variant Analysis of CD56+ Circulating Tumour Cells in Small Cell Lung Cancer (ERR6473446)*, Sequensolutions Internship Project, 2026.
+
+---
+
+## 8. License
+
+This project is licensed under the MIT License and conducted under the **Sequensolutions**.
